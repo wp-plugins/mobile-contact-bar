@@ -1,0 +1,157 @@
+# Copyright (C) 2015 Mobile Contact Bar
+# This file is distributed under the same license as the Mobile Contact Bar package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Mobile Contact Bar 0.0.1\n"
+"Report-Msgid-Bugs-To: https://github.com/bansaghi/mobile-contact-bar/issues\n"
+"POT-Creation-Date: 2015-07-29 15:52:47+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2015-07-29 17:58+0100\n"
+"Last-Translator: Anna Bansaghi <anna.bansaghi@mamikon.net>\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: English\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+
+
+#. #-#-#-#-#  mobile-contact-bar.pot (Mobile Contact Bar 0.0.1)  #-#-#-#-#
+#. Plugin Name of the plugin/theme
+#: includes/class-mcb-admin.php:163 includes/class-mcb-admin.php:204
+#: includes/class-mcb-admin.php:205 includes/class-mcb-admin.php:223
+msgid "Mobile Contact Bar"
+msgstr ""
+
+#: includes/class-mcb-admin.php:164
+msgid "Start editing the settings of your contact bar."
+msgstr ""
+
+#: includes/class-mcb-admin.php:270
+msgid "Bar Display Settings"
+msgstr ""
+
+#: includes/class-mcb-admin.php:293
+msgid "Icon Display Settings"
+msgstr ""
+
+#: includes/class-mcb-admin.php:316
+msgid "Contact Information"
+msgstr ""
+
+#: includes/class-mcb-admin.php:883
+msgid "Official Site"
+msgstr ""
+
+#: includes/class-mcb-admin.php:889
+msgid "Fork me on GitHub"
+msgstr ""
+
+#: includes/class-mcb-admin.php:895
+msgid "Rate this plugin"
+msgstr ""
+
+#: includes/class-mcb-admin.php:902
+msgid "Donate via PayPal"
+msgstr ""
+
+#: includes/class-mcb-admin.php:903
+msgid "Donation Button"
+msgstr ""
+
+#: includes/class-mcb-contacts.php:31
+msgid "Phone Number"
+msgstr ""
+
+#: includes/class-mcb-contacts.php:37
+msgid "Email Address"
+msgstr ""
+
+#: includes/class-mcb-settings.php:34
+msgid "Show / Hide Bar"
+msgstr ""
+
+#: includes/class-mcb-settings.php:35
+msgid "Show contact bar"
+msgstr ""
+
+#: includes/class-mcb-settings.php:36
+msgid "The bar will be shown if at least one contact information is set."
+msgstr ""
+
+#: includes/class-mcb-settings.php:42
+msgid "Bar Color"
+msgstr ""
+
+#: includes/class-mcb-settings.php:48
+msgid "Bar Opacity"
+msgstr ""
+
+#: includes/class-mcb-settings.php:54
+msgid "Bar Position"
+msgstr ""
+
+#: includes/class-mcb-settings.php:55
+msgid "at the bottom"
+msgstr ""
+
+#: includes/class-mcb-settings.php:55
+msgid "at the top"
+msgstr ""
+
+#: includes/class-mcb-settings.php:61
+msgid "Fixed Position"
+msgstr ""
+
+#: includes/class-mcb-settings.php:62
+msgid "Fix bar at its position"
+msgstr ""
+
+#: includes/class-mcb-settings.php:68
+msgid "Bar Height"
+msgstr ""
+
+#: includes/class-mcb-settings.php:76
+msgid "Bar Toggle"
+msgstr ""
+
+#: includes/class-mcb-settings.php:77
+msgid "Activate toggle"
+msgstr ""
+
+#: includes/class-mcb-settings.php:83
+msgid "Toggle Color"
+msgstr ""
+
+#: includes/class-mcb-settings.php:92
+msgid "Icon Size"
+msgstr ""
+
+#: includes/class-mcb-settings.php:99
+msgid "Icon Color"
+msgstr ""
+
+#: includes/class-mcb-settings.php:105
+msgid "Icon Border"
+msgstr ""
+
+#: includes/class-mcb-settings.php:106
+msgid "Draw border around icons"
+msgstr ""
+
+#: includes/class-mcb-settings.php:112
+msgid "Border Color"
+msgstr ""
+
+#: includes/class-mcb-settings.php:118
+msgid "Border Width"
+msgstr ""
+
+#: includes/class-mcb-settings.php:126
+msgid "Dock Max Width"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid ""
+"Allow your visitors to contact you directly via phone, email, or Social Media"
+msgstr ""
