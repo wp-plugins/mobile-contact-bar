@@ -40,13 +40,28 @@ final class MCB_Admin {
 
     include_once( plugin_dir_path( MCB_PLUGIN_FILE ) . 'includes/class-mcb-settings.php' );
 
-    add_option(
-        'mcb_options',
-        array(
-            'version'  => $plugin_data['Version'],
-            'settings' => array_map( function( $field ) { return $field['default']; }, MCB_Settings::settings() ),
-        )
+
+    $options = array(
+        'version'  => $plugin_data['Version'],
+        'settings' => array_map( function( $field ) { return $field['default']; }, MCB_Settings::settings() ),
     );
+
+    if( function_exists( 'is_multisite' ) && is_multisite() ) {
+
+      global $wpdb;
+
+      $blogs = $wpdb->get_col( "SELECT blog_id FROM $wpdb->blogs" );
+
+      foreach( $blogs as $blog ) {
+        switch_to_blog( $blog );
+
+        add_option( 'mcb_options', $options );
+      }
+      restore_current_blog();
+
+    } else {
+      add_option( 'mcb_options', $options );
+    }
 
     set_transient( 'mobile-contact-bar', '1', 120 );
   }

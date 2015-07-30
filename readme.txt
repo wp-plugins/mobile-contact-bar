@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: communication, social media, contact, mobile, icon, mobile action
 Requires at least: 3.5.2
 Tested up to: 4.2.3
-Stable tag: 0.0.1
+Stable tag: 0.0.2
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -70,6 +70,9 @@ Yes, you can. The `mcb_admin_update_contacts` filter allows you to modify the co
 
 
 == Changelog ==
+
+= 0.0.2 =
+* Fixed Add options issue during network activation
 
 = 0.0.1 =
 * Initial release

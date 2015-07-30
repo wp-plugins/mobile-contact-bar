@@ -4,7 +4,7 @@
  * Plugin Name: Mobile Contact Bar
  * Plugin URI:  https://bansaghi.github.io/mobilecontactbar/
  * Description: Allow your visitors to contact you directly via phone, email, or Social Media
- * Version:     0.0.1
+ * Version:     0.0.2
  * Author:      Anna Bansaghi
  * Author URI:  https://github.com/bansaghi/mobile-contact-bar/
  * License:     GPL-3.0
