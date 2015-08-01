@@ -6,7 +6,7 @@
  * @package Mobile_Contact_Bar
  * @author Anna Bansaghi <anna.bansaghi@mamikon.net>
  * @license GPL-3.0
- * @link https://bansaghi.github.io/mobilecontactbar/
+ * @link https://github.com/bansaghi/mobile-contact-bar/
  * @copyright Anna Bansaghi
  */
 

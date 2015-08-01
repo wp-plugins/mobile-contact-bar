@@ -1,5 +1,7 @@
 <?php
 
+defined( 'ABSPATH' ) or exit;
+
 /**
  * Mobile Contacts
  * 
@@ -8,11 +10,10 @@
  * @package Mobile_Contact_Bar
  * @author Anna Bansaghi <anna.bansaghi@mamikon.net>
  * @license GPL-3.0
- * @link https://bansaghi.github.io/mobilecontactbar/
+ * @link https://github.com/bansaghi/mobile-contact-bar/
  * @copyright Anna Bansaghi
  */
 final class MCB_Contacts {
-
 
 
   /**
@@ -20,7 +21,7 @@ final class MCB_Contacts {
    * 
    * @since 0.0.1
    * 
-   * @return array of contacts
+   * @return array Associative array of contacts
    */
   public static function contacts() {
 

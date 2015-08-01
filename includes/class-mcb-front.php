@@ -1,5 +1,6 @@
 <?php
 
+defined( 'ABSPATH' ) or exit;
 
 /**
  * Frontend related class
@@ -9,13 +10,12 @@
  * @package Mobile_Contact_Bar
  * @author Anna Bansaghi <anna.bansaghi@mamikon.net>
  * @license GPL-3.0
- * @link https://bansaghi.github.io/mobilecontactbar/
+ * @link https://github.com/bansaghi/mobile-contact-bar/
  * @copyright Anna Bansaghi
  */
 final class MCB_Front {
 
-  public static $options = null;
-
+  public static $option = null;
 
 
   /**
@@ -27,9 +27,16 @@ final class MCB_Front {
    */
   public static function plugins_loaded() {
 
-    self::$options = get_option( 'mcb_options' );
-    
-    if( ! empty( self::$options ) && isset( self::$options['contacts'] ) && isset( self::$options['styles'] ) && self::$options['settings']['bar_is_active'] ) {
+    self::$option = get_option( 'mcb_option' );
+
+    if( ! self::$option ) {
+      $option = get_option( 'mcb_options' );
+      self::$option = $option;
+      update_option( 'mcb_option', self::$option );
+      delete_option( 'mcb_options' );
+    }
+
+    if( ! empty( self::$option ) && isset( self::$option['contacts'] ) && isset( self::$option['styles'] ) && self::$option['settings']['bar_is_active'] ) {
       add_action( 'wp_head'            , array( __CLASS__, 'wp_head' ), 7 );
       add_action( 'wp_enqueue_scripts' , array( __CLASS__, 'wp_enqueue_scripts' ));
       add_action( 'wp_footer'          , array( __CLASS__, 'wp_footer' ));
@@ -51,7 +58,7 @@ final class MCB_Front {
     wp_enqueue_style( 'fa',
         plugins_url( 'fonts/font-awesome/css/font-awesome.min.css', MCB_PLUGIN_FILE ),
         false,
-        '4.3.0',
+        '4.4.0',
         'all'
     );
   }
@@ -60,7 +67,7 @@ final class MCB_Front {
 
 
   /**
-   * Adds the plugin related CSS styles within head section
+   * Adds the plugin related CSS styles within the head section
    * 
    * @since 0.0.1
    * 
@@ -68,8 +75,7 @@ final class MCB_Front {
    */
   public static function wp_head() {
     ?>
-    <style id="mobile-contact-bar-css" type="text/css" media="screen"><?php echo str_replace( '&quot;', '"', esc_html__( self::$options['styles'] )); ?>
-    @media screen and (min-width: 960px) {#mcb-wrap { display: none;}}</style>
+    <style id="mobile-contact-bar-css" type="text/css" media="screen"><?php echo str_replace( '&quot;', '"', esc_html__( self::$option['styles'] )); ?></style>
     <?php
   }
 
@@ -91,7 +97,7 @@ final class MCB_Front {
       add_action( 'mcb_front_render_html', array( __CLASS__, 'render_html' ), 10, 2 );
     }
 
-    do_action( 'mcb_front_render_html', self::$options['contacts'], self::$options['settings'] );
+    do_action( 'mcb_front_render_html', self::$option['contacts'], self::$option['settings'] );
   }
 
 
@@ -102,8 +108,8 @@ final class MCB_Front {
    * 
    * @since 0.0.1
    * 
-   * @param $contacts array of displayable contacts
-   * @param $settings array of bar and icon settings
+   * @param array $contacts Associative array of displayable contacts
+   * @param array $settings Associative array of bar and icon settings
    */
   public static function render_html( $contacts, $settings ) {
     if( 1 === did_action( 'mcb_front_render_html' )) {
