@@ -1,18 +1,19 @@
 <?php
 
+defined( 'ABSPATH' ) or exit;
+
 /**
- * Bar and Icon related settings
+ * Bar and Icon settings
  * 
  * @since 0.0.1
  * 
  * @package Mobile_Contact_Bar
  * @author Anna Bansaghi <anna.bansaghi@mamikon.net>
  * @license GPL-3.0
- * @link https://bansaghi.github.io/mobilecontactbar/
+ * @link https://github.com/bansaghi/mobile-contact-bar/
  * @copyright Anna Bansaghi
  */
 final class MCB_Settings {
-
 
 
   /**
@@ -20,7 +21,7 @@ final class MCB_Settings {
    * 
    * @since 0.0.1
    * 
-   * @return array of MCB setting fields, divided into two sections (Bar and Icon)
+   * @return array Associative array of MCB setting fields, divided into two sections (Bar and Icon)
    */
   public static function settings() {
 
@@ -34,6 +35,15 @@ final class MCB_Settings {
             'title'   => __( 'Show / Hide Bar', 'mcb' ),
             'label'   => __( 'Show contact bar', 'mcb' ),
             'desc'    => __( 'The bar will be shown if at least one contact information is set.', 'mcb' ),
+        ),
+        'bar_max_screen_width' => array(
+            'section' => 'bar',
+            'type'    => 'number',
+            'default' => 960,
+            'title'   => __( 'Max Screen Width', 'mcb' ),
+            'postfix' => 'px',
+            'min'     => 200,
+            'desc'    => __( 'The bar will be shown on those screens where the width is below of this value.', 'mcb' ),
         ),
         'bar_color' => array(
             'section' => 'bar',
@@ -83,7 +93,6 @@ final class MCB_Settings {
             'title'   => '<em>' . __( 'Toggle Color', 'mcb' ) . '</em>',
         ),
 
-
         // Section Icon
         'icon_size' => array(
             'section' => 'icon',
@@ -119,14 +128,15 @@ final class MCB_Settings {
             'postfix' => 'px',
             'min'     => 1,
         ),
-        'icon_dock_max_width' => array(
+        'icon_max_panel_width' => array(
             'section' => 'icon',
             'type'    => 'number',
             'default' => 100,
-            'title'   => __( 'Dock Max Width', 'mcb' ),
+            'title'   => __( 'Max Icon Panel Width', 'mcb' ),
             'postfix' => '%',
             'min'     => 10,
             'max'     => 100,
+            'desc'    => __( 'The icon panel will be squeezed at this percent.', 'mcb' ),
         ),
     ));
   }

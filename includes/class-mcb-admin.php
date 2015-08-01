@@ -1,5 +1,6 @@
 <?php
 
+defined( 'ABSPATH' ) or exit;
 
 /**
  * Administration related class
@@ -9,7 +10,7 @@
  * @package Mobile_Contact_Bar
  * @author Anna Bansaghi <anna.bansaghi@mamikon.net>
  * @license GPL-3.0
- * @link https://bansaghi.github.io/mobilecontactbar/
+ * @link https://github.com/bansaghi/mobile-contact-bar/
  * @copyright Anna Bansaghi
  */
 final class MCB_Admin {
@@ -19,38 +20,45 @@ final class MCB_Admin {
   public static $settings    = null;
   public static $contacts    = null;
 
-  public static $options     = null;
-
+  public static $option      = null;
+  public static $page        = 'mobile-contact-bar';
 
 
 
   /**
-   * Inserts plugin's option into the Options table for the very first time
+   * Inserts plugin's option into the Options table during plugin activation
    * 
    * @since 0.0.1
    * 
+   * @param bool $network_wide Whether to enable the plugin for all sites in the network or just the current site.
+   * 
+   * #uses $wpdb
+   * @uses MCB_Admin::get_default_option()
+   * 
    * @link https://codex.wordpress.org/Function_Reference/register_activation_hook
    */
-  public static function on_activation() {
+  public static function on_activation( $network_wide = false ) {
     if( ! current_user_can( 'activate_plugins' )) {
       return;
     }
 
-    $plugin_data = get_plugin_data( MCB_PLUGIN_FILE );
+    $default_option = self::get_default_option();
 
-    include_once( plugin_dir_path( MCB_PLUGIN_FILE ) . 'includes/class-mcb-settings.php' );
+    if( $network_wide ) {
 
-    add_option(
-        'mcb_options',
-        array(
-            'version'  => $plugin_data['Version'],
-            'settings' => array_map( function( $field ) { return $field['default']; }, MCB_Settings::settings() ),
-        )
-    );
+      global $wpdb;
 
-    set_transient( 'mobile-contact-bar', '1', 120 );
+      $blogs = $wpdb->get_col( "SELECT blog_id FROM $wpdb->blogs" );
+
+      foreach( $blogs as $blog_id ) {
+        add_blog_option( $blog_id, 'mcb_option', $default_option );
+      }
+
+    } else {
+      add_option( 'mcb_option', $default_option );
+      set_transient( 'mobile-contact-bar', '1', 120 );
+    }
   }
-
 
 
 
@@ -76,10 +84,12 @@ final class MCB_Admin {
     add_filter( 'plugin_action_links_' . plugin_basename( MCB_PLUGIN_FILE ), array( __CLASS__, 'plugin_action_links' ));
 
     add_action( 'init'                         , array( __CLASS__, 'init' ));
+    add_action( 'wpmu_new_blog'                , array( __CLASS__, 'wpmu_new_blog' ));
     add_action( 'admin_menu'                   , array( __CLASS__, 'admin_menu' ));
+    add_action( 'admin_init'                   , array( __CLASS__, 'plugin_upgrade' ));
     add_action( 'admin_init'                   , array( __CLASS__, 'admin_init' ));
     add_action( 'admin_enqueue_scripts'        , array( __CLASS__, 'admin_enqueue_scripts' ));
-    add_filter( 'pre_update_option_mcb_options', array( __CLASS__, 'pre_update_option' ), 10, 2 );
+    add_filter( 'pre_update_option_mcb_option' , array( __CLASS__, 'pre_update_option' ), 10, 2 );
     add_action( 'admin_footer'                 , array( __CLASS__, 'admin_footer' ));
   }
 
@@ -100,8 +110,27 @@ final class MCB_Admin {
 
     self::$settings = MCB_Settings::settings();
     self::$contacts = MCB_Contacts::contacts();
-    self::$options  = get_option( 'mcb_options' );
+    self::$option   = get_option( 'mcb_option' );
   }
+
+
+
+
+  /**
+   * Inserts plugin's option into the Options table on blog creation
+   * 
+   * @param int $blog_id Blog ID of the created blog
+   * 
+   * @since 1.0.0
+   * 
+   * @uses MCB_Admin::get_default_option()
+   * 
+   * @link http://codex.wordpress.org/Plugin_API/Action_Reference/wpmu_new_blog
+   */
+	public static function wpmu_new_blog( $blog_id ) {
+
+    add_blog_option( $blog_id, 'mcb_option', self::get_default_option() );
+	}
 
 
 
@@ -111,7 +140,7 @@ final class MCB_Admin {
    * 
    * @since 0.0.1
    * 
-   * @param $hook string a specific admin page
+   * @param string $hook The specific admin page
    * 
    * @see MCB_Admin::admin_print_footer_scripts()
    * 
@@ -135,8 +164,8 @@ final class MCB_Admin {
    * 
    * @since 0.0.1
    * 
-   * @param $links array of links to display on the plugins page
-   * @return array updated links
+   * @param array $links Associative array of links to display on the plugins page
+   * @return array Updated links
    * 
    * @link https://codex.wordpress.org/Plugin_API/Filter_Reference/plugin_action_links_%28plugin_file_name%29
    */
@@ -144,7 +173,7 @@ final class MCB_Admin {
 
     return array_merge(
         $links,
-        array( 'settings' => '<a href="' . admin_url( 'options-general.php?page=' . 'mcb' ) . '">' . __( 'Settings' ) . '</a>' )
+        array( 'settings' => '<a href="' . admin_url( 'options-general.php?page=' . self::$page ) . '">' . __( 'Settings' ) . '</a>' )
     );
   }
 
@@ -152,7 +181,7 @@ final class MCB_Admin {
 
 
   /**
-   * Outputs wp-pointer on activation
+   * Outputs wp-pointer after activation
    * 
    * @since 0.0.1
    * 
@@ -186,26 +215,74 @@ final class MCB_Admin {
 
 
   /**
+   * Updates plugin version
+   * 
+   * @since 1.0.0
+   * 
+   * @uses $wpdb
+   * 
+   * @link https://codex.wordpress.org/Plugin_API/Action_Reference/admin_init
+   */
+  public static function plugin_upgrade() {
+
+    if( is_plugin_active_for_network( plugin_basename( MCB_PLUGIN_FILE ))) {
+
+      global $wpdb;
+
+      $blogs = $wpdb->get_col( "SELECT blog_id FROM $wpdb->blogs" );
+
+      foreach( $blogs as $blog_id ) {
+        $option = get_blog_option( $blog_id, 'mcb_option' );
+        if( ! $option ) {
+          $option = get_blog_option( $blog_id, 'mcb_options' );
+          update_blog_option( $blog_id, 'mcb_option', $option );
+          delete_blog_option( $blog_id, 'mcb_options' );
+        }
+
+        if( $option['version'] < self::$plugin_data['Version'] ) {
+          $option['version'] = self::$plugin_data['Version'];
+          update_blog_option( $blog_id, 'mcb_option', $option );
+        }
+      }
+
+    } else {
+      if( ! self::$option ) {
+        self::$option = get_option( 'mcb_options' );
+        update_option( 'mcb_option', self::$option );
+        delete_option( 'mcb_options' );
+      }
+
+      if( self::$option['version'] < self::$plugin_data['Version'] ) {
+        self::$option['version'] = self::$plugin_data['Version'];
+        update_option( 'mcb_option', self::$option );
+      }
+    }
+  }
+
+
+
+
+  /**
    * Adds plugin option page
    * 
    * @since 0.0.1
    * 
-   * @see MCB_Admin::options_page()
+   * @see MCB_Admin::option_page()
    * 
    * @link https://codex.wordpress.org/Plugin_API/Action_Reference/admin_menu
    * @link https://codex.wordpress.org/Function_Reference/add_options_page
    */
   public static function admin_menu() {
 
-    // Workaround: should be in method init
+    // Workaround: should be in init method
     self::$plugin_data = get_plugin_data( MCB_PLUGIN_FILE );
 
     add_options_page(
         __( 'Mobile Contact Bar', 'mcb' ),
         __( 'Mobile Contact Bar', 'mcb' ),
         'manage_options',
-        'mcb',
-        array( __CLASS__, 'options_page' ));
+        self::$page,
+        array( __CLASS__, 'option_page' ));
   }
 
 
@@ -215,8 +292,11 @@ final class MCB_Admin {
    * Outputs the content for the plugin option page
    * 
    * @since 0.0.1
+   * 
+   * @link https://codex.wordpress.org/Function_Reference/settings_fields
+   * @link https://codex.wordpress.org/Function_Reference/do_settings_sections
    */
-  public static function options_page() {
+  public static function option_page() {
 
     ?>
     <div class="wrap mcb-wrap">
@@ -226,7 +306,7 @@ final class MCB_Admin {
         <?php
 
         settings_fields( 'mcb_option_group' );
-        do_settings_sections( 'mcb' );
+        do_settings_sections( self::$page );
 
         submit_button();
         
@@ -255,7 +335,7 @@ final class MCB_Admin {
    */
   public static function admin_init() {
 
-    register_setting( 'mcb_option_group', 'mcb_options', array( __CLASS__, 'sanitize_input' ));
+    register_setting( 'mcb_option_group', 'mcb_option', array( __CLASS__, 'sanitize_input' ));
 
     $section_bar  = array_filter( self::$settings, function( $field ) { return 'bar'  == $field['section']; });
     $section_icon = array_filter( self::$settings, function( $field ) { return 'icon' == $field['section']; });
@@ -269,7 +349,7 @@ final class MCB_Admin {
         'section_bar',
         __( 'Bar Display Settings', 'mcb' ),
         false,
-        'mcb'
+        self::$page
     );
 
     foreach( $section_bar as $id => $field ) {
@@ -277,7 +357,7 @@ final class MCB_Admin {
           $id,
           $field['title'],
           array( __CLASS__, 'setting_field_callback' ),
-          'mcb',
+          self::$page,
           'section_bar',
           array( 'id' => $id, 'field' => $field )
       ); 
@@ -292,7 +372,7 @@ final class MCB_Admin {
         'section_icon',
         __( 'Icon Display Settings', 'mcb' ),
         false,
-        'mcb'
+        self::$page
     );
 
     foreach( $section_icon as $id => $field ) {
@@ -300,7 +380,7 @@ final class MCB_Admin {
           $id,
           $field['title'],
           array( __CLASS__, 'setting_field_callback' ),
-          'mcb',
+          self::$page,
           'section_icon',
           array( 'id' => $id, 'field' => $field )
       ); 
@@ -313,9 +393,9 @@ final class MCB_Admin {
     /* -------------------------------------------------------------------------- */
     add_settings_section(
         'section_contacts',
-        __( 'Contact Information', 'mcb' ),
+        __( 'Contact List', 'mcb' ),
         false,
-        'mcb'
+        self::$page
     );
 
 
@@ -324,7 +404,7 @@ final class MCB_Admin {
           $id,
           '<i class="fa fa-lg fa-' . $contact['icon'] . ' mcb-contact"></i>' . $contact['title'],
           array( __CLASS__, 'setting_contact_callback' ),
-          'mcb',
+          self::$page,
           'section_contacts',
           array( 'id' => $id, 'contact' => $contact )
       ); 
@@ -339,7 +419,7 @@ final class MCB_Admin {
    * 
    * @since 0.0.1
    * 
-   * @param $args array of field's arguments
+   * @param array $args Associative array of field's arguments
    */
   public static function setting_field_callback( $args ) {
 
@@ -349,22 +429,22 @@ final class MCB_Admin {
 
        case 'color-picker':
         printf(
-            '<input type="text" id="%1$s" name="mcb_options[settings][%1$s]" class="cs-wp-color-picker" value="%2$s">',
+            '<input type="text" id="%1$s" name="mcb_option[settings][%1$s]" class="cs-wp-color-picker" value="%2$s">',
             esc_attr( $id ),
-            esc_attr( self::$options['settings'][$id] )
+            esc_attr( self::$option['settings'][$id] )
         );
         break;
 
       case 'select':
         printf(
-            '<select id="%1$s" name="mcb_options[settings][%1$s]">',
+            '<select id="%1$s" name="mcb_option[settings][%1$s]">',
             $id
         );
         foreach( $field['options'] as $value => $text ) {
           printf(
               '<option value="%s" %s>%s</option>',
               esc_attr( $value ),
-              selected( $value, self::$options['settings'][$id], false ),
+              selected( $value, self::$option['settings'][$id], false ),
               esc_attr( $text )
           );
         }
@@ -374,20 +454,20 @@ final class MCB_Admin {
 
       case 'checkbox':
         printf(
-            '<label for="%1$s"><input type="checkbox" id="%1$s" name="mcb_options[settings][%1$s]" %2$s value="1">%3$s</label>',
+            '<label for="%1$s"><input type="checkbox" id="%1$s" name="mcb_option[settings][%1$s]" %2$s value="1">%3$s</label>',
             esc_attr( $id ),
-            checked( self::$options['settings'][$id], 1, false ),
+            checked( self::$option['settings'][$id], 1, false ),
             esc_attr( $field['label'] )
         );
         break;
 
       case 'number':
         printf(
-            '<input type="number" id="%1$s" name="mcb_options[settings][%1$s]" class="small-text" min="%2$d" value="%3$d">
+            '<input type="number" id="%1$s" name="mcb_option[settings][%1$s]" class="small-text" min="%2$d" value="%3$d">
             <span>%4$s</span>',
             esc_attr( $id ),
             esc_attr( $field['min'] ),
-            esc_attr( self::$options['settings'][$id] ),
+            esc_attr( self::$option['settings'][$id] ),
             esc_attr( $field['postfix'] )
         );
         break;
@@ -395,18 +475,18 @@ final class MCB_Admin {
        case 'slider':
         printf(
             '<div class="mcb-slider" value=""></div>
-            <input type="text" id="%1$s" name="mcb_options[settings][%1$s]" class="small-text mcb-slider-input" value="%2$s" readonly="readonly">',
+            <input type="text" id="%1$s" name="mcb_option[settings][%1$s]" class="small-text mcb-slider-input" value="%2$s" readonly="readonly">',
             esc_attr( $id ),
-            esc_attr( self::$options['settings'][$id] )
+            esc_attr( self::$option['settings'][$id] )
         );
         break;
 
       case 'text-icon':
         printf(
-            '<input type="text" id="%1$s" name="mcb_options[settings][%1$s]" class="small-text" value="%2$s">
+            '<input type="text" id="%1$s" name="mcb_option[settings][%1$s]" class="small-text" value="%2$s">
             <i class="fa fa-lg fa-%2$s"></i>',
             esc_attr( $id ),
-            esc_attr( self::$options['settings'][$id] )
+            esc_attr( self::$option['settings'][$id] )
         );
         break;
     }
@@ -427,16 +507,16 @@ final class MCB_Admin {
    * 
    * @since 0.0.1
    * 
-   * @param $args array of contact's arguments
+   * @param array $args Associative array of contact's arguments
    */
   public static function setting_contact_callback( $args ) {
 
     extract( $args );
 
     printf(
-        '<input type="text" id="%1$s" name="mcb_options[contacts][%1$s]" class="regular-text" value="%2$s" placeholder="%3$s">',
+        '<input type="text" id="%1$s" name="mcb_option[contacts][%1$s]" class="regular-text" value="%2$s" placeholder="%3$s">',
         esc_attr( $id ),
-        isset( self::$options['contacts'][$id]['resource'] ) ? esc_attr( self::$options['contacts'][$id]['resource'] ) : '',
+        isset( self::$option['contacts'][$id]['resource'] ) ? esc_attr( self::$option['contacts'][$id]['resource'] ) : '',
         esc_attr( $contact['placeholder'] )
     );
   }
@@ -449,8 +529,8 @@ final class MCB_Admin {
    * 
    * @since 0.0.1
    * 
-   * @param $input multidimensional array of settings and contacts
-   * @return array of sanitized option
+   * @param array $input Multidimensional array of settings and contacts
+   * @return array The sanitized option
    * 
    * @see MCB_Admin::sanitize_hex_color()
    * @see MCB_Admin::sanitize_rgba_color()
@@ -520,16 +600,18 @@ final class MCB_Admin {
         // Bar Fixed Position
         // Bar Height
         // Bar Toggle
+        // Max Screen Width
         // Icon Border
         // Icon Border Width
-        // Dock Max Width
+        // Max Icon Panel Width
         case 'bar_is_active':
         case 'bar_is_fixed':
         case 'bar_height':
         case 'bar_is_toggle':
+        case 'bar_max_screen_width':
         case 'icon_is_border':
         case 'icon_border_width':
-        case 'icon_dock_max_width':
+        case 'icon_max_panel_width':
           $out_settings[$id] = absint( $value );
           break;
 
@@ -585,7 +667,7 @@ final class MCB_Admin {
 
 
     return array_filter( array_replace(
-        self::$options,
+        self::$option,
         array(
             'settings' => $out_settings,
             'contacts' => $out_contacts
@@ -597,86 +679,17 @@ final class MCB_Admin {
 
 
   /**
-   * Sanitizes hexadecimal color value
-   * 
-   * @since 0.0.1
-   * 
-   * @param $color string color value
-   * @return string sanitized hexadecmial color
-   */
-  static function sanitize_hex_color( $color ) {
-      if( '' === $color ) {
-        return null;
-      }
-   
-      if( preg_match('/^#([A-Fa-f0-9]{3}){1,2}$/', $color )) {
-        return $color;
-      }
-   
-      return null;
-  }
-
-
-
-
-  /**
-   * Sanitizes RGBA color value
-   * 
-   * @since 0.0.1
-   * 
-   * @param $color string color value
-   * @return string sanitized RGBA color
-   */
-  static function sanitize_rgba_color( $color ) {
-    if( '' === $color ) {
-      return null;
-    }
-
-    if( preg_match('/^rgba\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3}),\s*(\d*(?:\.\d+)?)\)$/', $color )) {
-      return $color;
-    }
- 
-    return null;
-  }
-
-
-
-
-  /**
-   * Sanitizes float value
-   * 
-   * @since 0.0.1
-   * 
-   * @param $opacity string opacity value
-   * @return string sanitized opacity
-   */
-  static function sanitize_float( $opacity ) {
-    if( '' === $opacity ) {
-      return null;
-    }
-
-    if( preg_match('/0|1|0\.\d\d/', $opacity )) {
-      return $opacity;
-    }
-
-    return null;
-  }
-
-
-
-
-  /**
    * Loads CSS styles and JavaScript scripts for plugin option page
    * 
    * @since 0.0.1
    * 
-   * @param $hook string a specific admin page
+   * @param string $hook The specific admin page
    * 
    * @link https://codex.wordpress.org/Plugin_API/Action_Reference/admin_enqueue_scripts
    */
   public static function admin_enqueue_scripts( $hook ) {
 
-    if( 'settings_page_mcb' == $hook ) {
+    if( 'settings_page_' . self::$page == $hook ) {
 
       wp_enqueue_style(  'wp-color-picker' );
       wp_enqueue_script( 'wp-color-picker' );
@@ -699,7 +712,7 @@ final class MCB_Admin {
       wp_enqueue_style( 'fa',
           plugins_url( 'fonts/font-awesome/css/font-awesome.min.css', MCB_PLUGIN_FILE ),
           false,
-          '4.3.0',
+          '4.4.0',
           'all'
       );
 
@@ -727,9 +740,9 @@ final class MCB_Admin {
    * 
    * @since 0.0.1
    * 
-   * @param $new_value 
-   * @param $old_value 
-   * @return array of option
+   * @param array $new_value The new value
+   * @param array $old_value The old value
+   * @return array The updated option
    * 
    * @link https://codex.wordpress.org/Plugin_API/Filter_Reference/pre_update_option_%28option_name%29
    */
@@ -768,6 +781,7 @@ final class MCB_Admin {
       $styles .= 'width:inherit;';
     $styles .= '}';
 
+    $panel_width = isset( $settings['icon_max_panel_width'] ) ? $settings['icon_max_panel_width'] : '100';
 
     // #mcb-bar ul
     $styles .= '#mcb-bar ul{';
@@ -775,7 +789,7 @@ final class MCB_Admin {
       $styles .= 'height:inherit;';
       $styles .= 'list-style-type:none;';
       $styles .= 'margin:0 auto;';
-      $styles .= 'max-width:' . $settings['icon_dock_max_width'] . '%;';
+      $styles .= 'max-width:' . $panel_width . '%;';
       $styles .= 'table-layout:fixed;';
       $styles .= 'width:inherit;';
     $styles .= '}';
@@ -807,6 +821,10 @@ final class MCB_Admin {
     $styles .= '#mcb-bar .fa{';
       $styles .= 'color:'. $settings['icon_color'] . ';';
     $styles .= '}';
+
+
+    // @media
+    $styles .= '@media screen and (min-width: ' . $settings['bar_max_screen_width'] . 'px) {#mcb-wrap { display: none;}}';
 
 
     if( $settings['bar_is_toggle'] ) {
@@ -875,7 +893,7 @@ final class MCB_Admin {
    */
   public static function admin_footer() {
 
-    if( 'settings_page_mcb' == get_current_screen()->base ) {
+    if( 'settings_page_' . self::$page == get_current_screen()->base ) {
 
       $site = sprintf(
           '<a href="%s" target="_blank"><i class="fa fa-lg fa-heart" title="%s"></i></a>',
@@ -911,6 +929,98 @@ final class MCB_Admin {
       <?php
     }
   }
+
+
+
+
+  /**
+   * Gets default option
+   * 
+   * @return array Options fill with version number and default settings
+   * 
+   * @since 1.0.0
+   */
+  private static function get_default_option() {
+
+    $plugin_data = get_plugin_data( MCB_PLUGIN_FILE );
+
+    include_once( plugin_dir_path( MCB_PLUGIN_FILE ) . 'includes/class-mcb-settings.php' );
+
+    return array(
+        'version'  => $plugin_data['Version'],
+        'settings' => array_map( function( $field ) { return $field['default']; }, MCB_Settings::settings() ),
+    );
+  }
+
+
+
+
+  /**
+   * Sanitizes hexadecimal color value
+   * 
+   * @since 0.0.1
+   * 
+   * @param string $color Color value
+   * @return string Sanitized hexadecmial color
+   */
+  private static function sanitize_hex_color( $color ) {
+      if( '' === $color ) {
+        return null;
+      }
+   
+      if( preg_match('/^#([A-Fa-f0-9]{3}){1,2}$/', $color )) {
+        return $color;
+      }
+   
+      return null;
+  }
+
+
+
+
+  /**
+   * Sanitizes RGBA color value
+   * 
+   * @since 0.0.1
+   * 
+   * @param string $color Color value
+   * @return string Sanitized RGBA color
+   */
+  private static function sanitize_rgba_color( $color ) {
+    if( '' === $color ) {
+      return null;
+    }
+
+    if( preg_match('/^rgba\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3}),\s*(\d*(?:\.\d+)?)\)$/', $color )) {
+      return $color;
+    }
+ 
+    return null;
+  }
+
+
+
+
+  /**
+   * Sanitizes float value
+   * 
+   * @since 0.0.1
+   * 
+   * @param string $opacity Opacity value
+   * @return string Sanitized opacity
+   */
+  private static function sanitize_float( $opacity ) {
+    if( '' === $opacity ) {
+      return null;
+    }
+
+    if( preg_match('/0|1|0\.\d\d/', $opacity )) {
+      return $opacity;
+    }
+
+    return null;
+  }
+
 
 }
 
